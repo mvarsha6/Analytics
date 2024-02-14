@@ -1,0 +1,17 @@
+{
+	"name": "SQL script 1",
+	"properties": {
+		"content": {
+			"query": "SET ANSI_NULLS ON\nGO\nSET QUOTED_IDENTIFIER ON\nGO\n\nCREATE TABLE [persist].[CurrencyRate]\n( \n\t[CurrencyRateID] [nvarchar](max)  NULL,\n\t[CurrencyRateDate] [nvarchar](max)  NULL,\n\t[FromCurrencyCode] [nvarchar](max)  NULL,\n\t[ToCurrencyCode] [nvarchar](max)  NULL,\n\t[AverageRate] [nvarchar](max)  NULL,\n\t[EndOfDayRate] [nvarchar](max)  NULL,\n\t[ModifiedDate] [nvarchar](max)  NULL,\n\t[PipelineRunTime] [nvarchar](max)  NULL\n)\nWITH\n(\n\tDISTRIBUTION = ROUND_ROBIN,\n\tHEAP\n)\nGO",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"databaseName": "devSynapseDedicatedPool",
+				"poolName": "devSynapseDedicatedPool"
+			},
+			"resultLimit": 5000
+		},
+		"type": "SqlQuery"
+	}
+}

@@ -1,0 +1,320 @@
+{
+	"name": "PL_IncremantalLoad_AdventureWorks",
+	"properties": {
+		"activities": [
+			{
+				"name": "Get Control Table",
+				"type": "Lookup",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "SqlPoolSource",
+						"sqlReaderQuery": {
+							"value": "SELECT * FROM dbo.ControlTable\nWHERE full_delta_load=2",
+							"type": "Expression"
+						},
+						"queryTimeout": "02:00:00"
+					},
+					"dataset": {
+						"referenceName": "DS_SynapseDSQLPool",
+						"type": "DatasetReference",
+						"parameters": {
+							"TableName": "*",
+							"SchemaName": "*"
+						}
+					},
+					"firstRowOnly": false
+				}
+			},
+			{
+				"name": "ForEachTable",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "Get Control Table",
+						"dependencyConditions": [
+							"Completed"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('Get Control Table').output.value",
+						"type": "Expression"
+					},
+					"isSequential": false,
+					"activities": [
+						{
+							"name": "On-Prem to ADLS",
+							"description": "Proof of Capture",
+							"type": "Copy",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "SqlServerSource",
+									"additionalColumns": [
+										{
+											"name": "PipelineRunTime",
+											"value": {
+												"value": "@pipeline().TriggerTime",
+												"type": "Expression"
+											}
+										}
+									],
+									"queryTimeout": "02:00:00",
+									"partitionOption": "None"
+								},
+								"sink": {
+									"type": "DelimitedTextSink",
+									"storeSettings": {
+										"type": "AzureBlobFSWriteSettings"
+									},
+									"formatSettings": {
+										"type": "DelimitedTextWriteSettings",
+										"quoteAllText": true,
+										"fileExtension": ".txt"
+									}
+								},
+								"enableStaging": false,
+								"translator": {
+									"type": "TabularTranslator",
+									"typeConversion": true,
+									"typeConversionSettings": {
+										"allowDataTruncation": true,
+										"treatBooleanAsNumber": false
+									}
+								}
+							},
+							"inputs": [
+								{
+									"referenceName": "DS_OnPremSQLServer",
+									"type": "DatasetReference",
+									"parameters": {
+										"TableSchema": {
+											"value": "@item().sourceschema",
+											"type": "Expression"
+										},
+										"TableName": {
+											"value": "@item().sourcetable",
+											"type": "Expression"
+										},
+										"DatabaseName": {
+											"value": "@item().databasename",
+											"type": "Expression"
+										}
+									}
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "DS_ADLS_CSV",
+									"type": "DatasetReference",
+									"parameters": {
+										"ContainerName": {
+											"value": "synapse/staging/",
+											"type": "Expression"
+										},
+										"FolderName": {
+											"value": "@concat(formatDateTime(utcNow(),'yyyy'),'/',formatDateTime(utcNow(),'MM'),'/',formatDateTime(utcNow(),'dd'),'/')",
+											"type": "Expression"
+										},
+										"FileName": {
+											"value": "@concat(item().sourceschema,'.',item().sourcetable)",
+											"type": "Expression"
+										}
+									}
+								}
+							]
+						},
+						{
+							"name": "ADLS to Stage",
+							"description": "Stage is Truncate and Load",
+							"type": "Copy",
+							"dependsOn": [
+								{
+									"activity": "On-Prem to ADLS",
+									"dependencyConditions": [
+										"Completed"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "DelimitedTextSource",
+									"storeSettings": {
+										"type": "AzureBlobFSReadSettings",
+										"recursive": true,
+										"enablePartitionDiscovery": false
+									},
+									"formatSettings": {
+										"type": "DelimitedTextReadSettings"
+									}
+								},
+								"sink": {
+									"type": "SqlPoolSink",
+									"preCopyScript": {
+										"value": "TRUNCATE TABLE @{item().stageschema}.@{item().stagetable}",
+										"type": "Expression"
+									},
+									"writeBehavior": "Insert",
+									"sqlWriterUseTableLock": false
+								},
+								"enableStaging": false,
+								"translator": {
+									"type": "TabularTranslator",
+									"typeConversion": true,
+									"typeConversionSettings": {
+										"allowDataTruncation": true,
+										"treatBooleanAsNumber": false
+									}
+								}
+							},
+							"inputs": [
+								{
+									"referenceName": "DS_ADLS_CSV",
+									"type": "DatasetReference",
+									"parameters": {
+										"ContainerName": {
+											"value": "synapse/staging/",
+											"type": "Expression"
+										},
+										"FolderName": {
+											"value": "@concat(formatDateTime(utcNow(),'yyyy'),'/',formatDateTime(utcNow(),'MM'),'/',formatDateTime(utcNow(),'dd'),'/')",
+											"type": "Expression"
+										},
+										"FileName": {
+											"value": "@concat(item().sourceschema,'.',item().sourcetable)",
+											"type": "Expression"
+										}
+									}
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "DS_SynapseDSQLPool",
+									"type": "DatasetReference",
+									"parameters": {
+										"TableName": {
+											"value": "@item().stagetable",
+											"type": "Expression"
+										},
+										"SchemaName": {
+											"value": "@item().stageschema",
+											"type": "Expression"
+										}
+									}
+								}
+							]
+						},
+						{
+							"name": "Stage to Persist",
+							"description": "Persist is Upsert using Key Column",
+							"type": "Copy",
+							"dependsOn": [
+								{
+									"activity": "ADLS to Stage",
+									"dependencyConditions": [
+										"Completed"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "SqlPoolSource",
+									"queryTimeout": "02:00:00"
+								},
+								"sink": {
+									"type": "SqlPoolSink",
+									"writeBehavior": "Upsert",
+									"upsertSettings": {
+										"keys": {
+											"value": "@array(item().persistkey)",
+											"type": "Expression"
+										},
+										"interimSchemaName": ""
+									},
+									"sqlWriterUseTableLock": false
+								},
+								"enableStaging": false,
+								"translator": {
+									"type": "TabularTranslator",
+									"typeConversion": true,
+									"typeConversionSettings": {
+										"allowDataTruncation": true,
+										"treatBooleanAsNumber": false
+									}
+								}
+							},
+							"inputs": [
+								{
+									"referenceName": "DS_SynapseDSQLPool",
+									"type": "DatasetReference",
+									"parameters": {
+										"TableName": {
+											"value": "@item().stagetable",
+											"type": "Expression"
+										},
+										"SchemaName": {
+											"value": "@item().stageschema",
+											"type": "Expression"
+										}
+									}
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "DS_SynapseDSQLPool",
+									"type": "DatasetReference",
+									"parameters": {
+										"TableName": {
+											"value": "@item().persisttable",
+											"type": "Expression"
+										},
+										"SchemaName": {
+											"value": "@item().persistschema",
+											"type": "Expression"
+										}
+									}
+								}
+							]
+						}
+					]
+				}
+			}
+		],
+		"annotations": []
+	}
+}
