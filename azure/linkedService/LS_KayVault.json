@@ -1,0 +1,10 @@
+{
+	"name": "LS_KayVault",
+	"properties": {
+		"annotations": [],
+		"type": "AzureKeyVault",
+		"typeProperties": {
+			"baseUrl": "https://keyvaultdwdev.vault.azure.net/"
+		}
+	}
+}
