@@ -1,0 +1,21 @@
+{
+	"name": "LS_OnPremSQLServer",
+	"type": "Microsoft.Synapse/workspaces/linkedservices",
+	"properties": {
+		"parameters": {
+			"DatabaseName": {
+				"type": "string"
+			}
+		},
+		"annotations": [],
+		"type": "SqlServer",
+		"typeProperties": {
+			"connectionString": "integrated security=False;data source=VARSHAKOMMINENI\\SQLEXPRESS;initial catalog=@{linkedService().DatabaseName};user id=mvarsha.666",
+			"encryptedCredential": "eyJDcmVkZW50aWFsSWQiOiJhZTViYzQzMy1iOTFjLTQ4NGQtOWY3YS04YmUwODdiZGU4NzEiLCJWZXJzaW9uIjoiMi4wIiwiQ2xhc3NUeXBlIjoiTWljcm9zb2Z0LkRhdGFQcm94eS5Db3JlLkludGVyU2VydmljZURhdGFDb250cmFjdC5DcmVkZW50aWFsU1UwNkNZMTQifQ=="
+		},
+		"connectVia": {
+			"referenceName": "IntegrationRuntime1",
+			"type": "IntegrationRuntimeReference"
+		}
+	}
+}
