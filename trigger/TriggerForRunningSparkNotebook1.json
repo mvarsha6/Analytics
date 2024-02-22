@@ -1,0 +1,25 @@
+{
+	"name": "TriggerForRunningSparkNotebook1",
+	"properties": {
+		"annotations": [],
+		"runtimeState": "Started",
+		"pipelines": [
+			{
+				"pipelineReference": {
+					"referenceName": "RunningSparkNotebook1",
+					"type": "PipelineReference"
+				}
+			}
+		],
+		"type": "ScheduleTrigger",
+		"typeProperties": {
+			"recurrence": {
+				"frequency": "Hour",
+				"interval": 1,
+				"startTime": "2024-01-27T12:15:00",
+				"endTime": "2024-01-27T17:00:00",
+				"timeZone": "Central Standard Time"
+			}
+		}
+	}
+}

@@ -1,0 +1,28 @@
+{
+	"name": "LS_OnPremSQLSERVER",
+	"type": "Microsoft.DataFactory/factories/linkedservices",
+	"properties": {
+		"parameters": {
+			"DataBaseName": {
+				"type": "string"
+			}
+		},
+		"annotations": [],
+		"type": "SqlServer",
+		"typeProperties": {
+			"connectionString": "Integrated Security=False;Data Source=VARSHAKOMMINENI\\SQLEXPRESS;Initial Catalog=@{linkedService().DataBaseName};User ID=mvarsha.666",
+			"password": {
+				"type": "AzureKeyVaultSecret",
+				"store": {
+					"referenceName": "LS_AzureKeyVault",
+					"type": "LinkedServiceReference"
+				},
+				"secretName": "OnPremSQLAuthenticationPassword"
+			}
+		},
+		"connectVia": {
+			"referenceName": "IR-SelfHosted-OnPrem",
+			"type": "IntegrationRuntimeReference"
+		}
+	}
+}
