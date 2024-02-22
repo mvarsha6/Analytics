@@ -1,0 +1,138 @@
+{
+	"name": "GetDatafromOnPrem",
+	"properties": {
+		"activities": [
+			{
+				"name": "Lookup all tables from On-Prem SQL Server",
+				"type": "Lookup",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "SqlServerSource",
+						"sqlReaderQuery": {
+							"value": "SELECT table_schema,table_name\nFROM INFORMATION_SCHEMA.TABLES\nWHERE table_type = 'BASE TABLE'",
+							"type": "Expression"
+						},
+						"queryTimeout": "02:00:00",
+						"partitionOption": "None"
+					},
+					"dataset": {
+						"referenceName": "DS_SQLServer",
+						"type": "DatasetReference",
+						"parameters": {
+							"SchemaName": "*",
+							"TableName": "*",
+							"DatabaseName": "AdventureWorks2022"
+						}
+					},
+					"firstRowOnly": false
+				}
+			},
+			{
+				"name": "ForEach table in looup perform Copy",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "Lookup all tables from On-Prem SQL Server",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('Lookup all tables from On-Prem SQL Server').output.value",
+						"type": "Expression"
+					},
+					"isSequential": true,
+					"activities": [
+						{
+							"name": "Copy Tables to ADLS",
+							"type": "Copy",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "SqlServerSource",
+									"queryTimeout": "02:00:00",
+									"partitionOption": "None"
+								},
+								"sink": {
+									"type": "ParquetSink",
+									"storeSettings": {
+										"type": "AzureBlobFSWriteSettings"
+									},
+									"formatSettings": {
+										"type": "ParquetWriteSettings"
+									}
+								},
+								"enableStaging": false,
+								"translator": {
+									"type": "TabularTranslator",
+									"typeConversion": true,
+									"typeConversionSettings": {
+										"allowDataTruncation": true,
+										"treatBooleanAsNumber": false
+									}
+								}
+							},
+							"inputs": [
+								{
+									"referenceName": "DS_SQLServer",
+									"type": "DatasetReference",
+									"parameters": {
+										"SchemaName": {
+											"value": "@item().table_schema",
+											"type": "Expression"
+										},
+										"TableName": {
+											"value": "@item().table_name",
+											"type": "Expression"
+										},
+										"DatabaseName": "AdventureWorks2022"
+									}
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "DS_ADLS_Parquet",
+									"type": "DatasetReference",
+									"parameters": {
+										"ContainerName": "adventureworks2022",
+										"FolderName": {
+											"value": "@item().table_schema",
+											"type": "Expression"
+										},
+										"FileName": {
+											"value": "@concat(item().table_schema,item().table_name)",
+											"type": "Expression"
+										}
+									}
+								}
+							]
+						}
+					]
+				}
+			}
+		],
+		"annotations": [],
+		"lastPublishTime": "2024-01-27T23:17:26Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

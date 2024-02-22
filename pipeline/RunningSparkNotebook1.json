@@ -1,0 +1,30 @@
+{
+	"name": "RunningSparkNotebook1",
+	"properties": {
+		"activities": [
+			{
+				"name": "Notebook1",
+				"type": "DatabricksNotebook",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"notebookPath": "/Users/mvarsha.666_outlook.com#ext#@mvarsha666outlook.onmicrosoft.com/spark/Getting files from ADLS"
+				},
+				"linkedServiceName": {
+					"referenceName": "LS_DataBricks",
+					"type": "LinkedServiceReference"
+				}
+			}
+		],
+		"annotations": [],
+		"lastPublishTime": "2024-01-26T22:55:57Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}
